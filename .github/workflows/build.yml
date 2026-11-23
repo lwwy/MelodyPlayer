@@ -45,7 +45,7 @@ jobs:
         id: collect
         run: |
           APK=$(find app/build/outputs/apk/release -name "*arm64-v8a*.apk" | head -n 1)
-          VERSION=$(./gradlew -q :app:properties | grep -m1 '^versionName:' | sed 's/versionName: //')
+          VERSION=$(grep -m1 'versionName = ' app/build.gradle.kts | sed 's/.*versionName = "\(.*\)"/\1/')
           OUT="MelodyPlayer-v${VERSION}-release-arm64-v8a.apk"
           cp "$APK" "app/build/outputs/$OUT"
           echo "apk_path=app/build/outputs/$OUT" >> "$GITHUB_OUTPUT"
