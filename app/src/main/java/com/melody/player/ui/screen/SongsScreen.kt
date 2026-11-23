@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -50,23 +49,7 @@ fun SongsScreen(
     bottomContentPadding: Dp = 0.dp,
     onSongClick: (Song) -> Unit
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        // 顶部栏：仅标题。statusBarsPadding 避开状态栏，左边距 16dp 与封面图对齐。
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .offset(y = (-8).dp)
-                .padding(bottom = 8.dp)
-                .padding(start = 16.dp, end = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
+    Column(modifier = modifier.fillMaxSize().statusBarsPadding()) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
         when {
             isLoading -> {
