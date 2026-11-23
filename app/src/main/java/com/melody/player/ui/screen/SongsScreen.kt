@@ -72,7 +72,7 @@ fun SongsScreen(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = bottomContentPadding)
+                    contentPadding = PaddingValues(top = 16.dp, bottom = bottomContentPadding)
                 ) {
                     items(songs, key = { it.id }) { song ->
                         SongRow(
