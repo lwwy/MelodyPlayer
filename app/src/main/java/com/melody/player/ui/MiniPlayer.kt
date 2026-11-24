@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.melody.player.ui
 
 import androidx.compose.foundation.background
@@ -11,12 +13,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,11 +42,10 @@ fun MiniPlayer(
     onTogglePlay: () -> Unit,
     onExpand: () -> Unit
 ) {
-    // 缩小版悬浮卡片：约 58dp 高、封面 42dp、圆角 18dp。
-    // 实色 primaryContainer 背景（与列表「正在播放」行同款主题浅蓝，随壁纸动态变化），
-    // 文字/图标用 onPrimaryContainer 系列自动适配明暗。移除 haze 高斯模糊——
-    // 它既稀释了主题色（蓝色被冲淡成灰白），又在卡片四周形成散开的光晕。
-    val shape = RoundedCornerShape(18.dp)
+    // Material 3 Expressive 悬浮卡片：largeIncreased 大圆角表达性形状，
+    // 实色 primaryContainer 背景（与列表「正在播放」行同款，随壁纸动态变色），
+    // 文字/图标用 onPrimaryContainer 系列自动适配明暗；点击展开全屏播放页。
+    val shape = MaterialTheme.shapes.largeIncreased
     val container = MaterialTheme.colorScheme.primaryContainer
     val onContainer = MaterialTheme.colorScheme.onPrimaryContainer
     Row(
@@ -61,22 +64,22 @@ fun MiniPlayer(
             uri = song.albumArtUri,
             contentDescription = "专辑封面",
             modifier = Modifier.size(42.dp),
-            shape = RoundedCornerShape(9.dp)
+            shape = RoundedCornerShape(10.dp)
         )
         Spacer(Modifier.width(10.dp))
         // 进度条位于封面与右侧播放键之间的文字区，作为第三行
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 song.title,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleMediumEmphasized,
                 color = onContainer,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 song.artist,
-                style = MaterialTheme.typography.bodySmall,
-                color = onContainer.copy(alpha = 0.72f),
+                style = MaterialTheme.typography.bodyMedium,
+                color = onContainer.copy(alpha = 0.78f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -93,7 +96,13 @@ fun MiniPlayer(
                 drawStopIndicator = {}
             )
         }
-        IconButton(onClick = onTogglePlay) {
+        IconButton(
+            onClick = onTogglePlay,
+            shapes = IconButtonDefaults.shapes(
+                shape = CircleShape,
+                pressedShape = RoundedCornerShape(12.dp)
+            )
+        ) {
             Icon(
                 imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                 contentDescription = if (isPlaying) "暂停" else "播放",

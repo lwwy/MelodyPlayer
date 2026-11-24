@@ -17,25 +17,8 @@ val RobotoFontFamily = FontFamily(
 )
 
 /**
- * 以 Material 3 官方 type scale 为基准，仅把字体族统一替换为 Roboto。
- * 这样字号/字重/字距全部保持官方规范，只是字体换成谷歌推荐的 Roboto。
+ * Material 3 Expressive 排版：用 Typography(fontFamily) 构造一次性把 Roboto 应用到
+ * 全部 type scale —— 包含 Expressive 新增的 emphasized 变体（display/headline/title/body/
+ * label *Emphasized），字号、字重、字距与 emphasized 粗细对比全部保持官方规范。
  */
-private val MaterialTypography = Typography()
-
-val Typography = MaterialTypography.copy(
-    displayLarge = MaterialTypography.displayLarge.copy(fontFamily = RobotoFontFamily),
-    displayMedium = MaterialTypography.displayMedium.copy(fontFamily = RobotoFontFamily),
-    displaySmall = MaterialTypography.displaySmall.copy(fontFamily = RobotoFontFamily),
-    headlineLarge = MaterialTypography.headlineLarge.copy(fontFamily = RobotoFontFamily),
-    headlineMedium = MaterialTypography.headlineMedium.copy(fontFamily = RobotoFontFamily),
-    headlineSmall = MaterialTypography.headlineSmall.copy(fontFamily = RobotoFontFamily),
-    titleLarge = MaterialTypography.titleLarge.copy(fontFamily = RobotoFontFamily),
-    titleMedium = MaterialTypography.titleMedium.copy(fontFamily = RobotoFontFamily),
-    titleSmall = MaterialTypography.titleSmall.copy(fontFamily = RobotoFontFamily),
-    bodyLarge = MaterialTypography.bodyLarge.copy(fontFamily = RobotoFontFamily),
-    bodyMedium = MaterialTypography.bodyMedium.copy(fontFamily = RobotoFontFamily),
-    bodySmall = MaterialTypography.bodySmall.copy(fontFamily = RobotoFontFamily),
-    labelLarge = MaterialTypography.labelLarge.copy(fontFamily = RobotoFontFamily),
-    labelMedium = MaterialTypography.labelMedium.copy(fontFamily = RobotoFontFamily),
-    labelSmall = MaterialTypography.labelSmall.copy(fontFamily = RobotoFontFamily)
-)
+val Typography = Typography(fontFamily = RobotoFontFamily)

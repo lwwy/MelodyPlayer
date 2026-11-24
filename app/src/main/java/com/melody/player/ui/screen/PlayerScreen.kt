@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.melody.player.ui.screen
 
 import androidx.compose.animation.AnimatedContent
@@ -41,7 +43,9 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -110,22 +114,22 @@ private fun AnimatedContentTransitionScope<LyricsSnapshot>.lyricsSwitchSpec(): C
 }
 
 /**
- * 精简进度条：细轨道（4dp）+ 小圆点（12dp），支持点击定位与拖动。
- * 暂停时同样可拖动：松手后由 ViewModel 的 seekTo 更新进度并续播。
+ * Material 3 Expressive 波形进度条：官方 [LinearWavyProgressIndicator]，
+ * 播放时带轻微波浪律动，暂停时平直。保留点击定位与拖动 seek 交互
+ * （暂停时同样可拖动，松手后由 ViewModel 的 seekTo 更新进度并续播）。
  */
 @Composable
 private fun SlimSeekBar(
     fraction: Float,
+    isPlaying: Boolean,
     onScrub: (Float) -> Unit,
     onScrubFinished: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val trackHeight = 4.dp
-    val thumbSize = 12.dp
-    BoxWithConstraints(
+    Box(
         modifier = modifier
-            .height(20.dp)
+            .height(28.dp)
             .fillMaxWidth()
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
@@ -148,32 +152,15 @@ private fun SlimSeekBar(
                     onDragEnd = { onScrubFinished() }
                 )
             },
-        contentAlignment = Alignment.CenterStart
+        contentAlignment = Alignment.Center
     ) {
-        val trackWidth = maxWidth
-        // 轨道底色
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(trackHeight)
-                .clip(RoundedCornerShape(trackHeight / 2))
-                .background(colorScheme.surfaceVariant)
-        )
-        // 已播放部分
-        Box(
-            modifier = Modifier
-                .width(trackWidth * fraction)
-                .height(trackHeight)
-                .clip(RoundedCornerShape(trackHeight / 2))
-                .background(colorScheme.primary)
-        )
-        // 小圆点 thumb
-        Box(
-            modifier = Modifier
-                .offset(x = (trackWidth * fraction - thumbSize / 2).coerceAtLeast(0.dp))
-                .size(thumbSize)
-                .clip(CircleShape)
-                .background(colorScheme.primary)
+        LinearWavyProgressIndicator(
+            progress = { fraction.coerceIn(0f, 1f) },
+            modifier = Modifier.fillMaxWidth(),
+            color = colorScheme.primary,
+            trackColor = colorScheme.surfaceVariant,
+            // 播放时给 0.6 波浪幅度制造律动；暂停时 0，回归平直轨道
+            amplitude = { if (isPlaying) 0.6f else 0f }
         )
     }
 }
@@ -241,7 +228,12 @@ fun PlayerScreen(
                     .padding(top = 4.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onDismiss) {
+                IconButton(
+                    onClick = onDismiss,
+                    shapes = IconButtonDefaults.shapes(
+                        pressedShape = CircleShape
+                    )
+                ) {
                     Icon(
                         Icons.Filled.KeyboardArrowDown,
                         contentDescription = "收起播放页",
@@ -310,8 +302,7 @@ fun PlayerScreen(
                 androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         infoSong.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.headlineSmallEmphasized,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
@@ -372,6 +363,7 @@ fun PlayerScreen(
             // 精简进度条：暂停时也可拖动，松手后由 seekTo 更新进度并续播
             SlimSeekBar(
                 fraction = displayFraction,
+                isPlaying = isPlaying,
                 onScrub = { scrubFraction = it },
                 onScrubFinished = {
                     if (scrubFraction >= 0f) onSeek((scrubFraction * effectiveDuration).toLong())
@@ -395,11 +387,20 @@ fun PlayerScreen(
             ) {
                 IconToggleButton(
                     checked = shuffle,
-                    onCheckedChange = { onToggleShuffle() }
+                    onCheckedChange = { onToggleShuffle() },
+                    shapes = IconButtonDefaults.toggleableShapes(
+                        checkedShape = RoundedCornerShape(14.dp)
+                    ),
+                    colors = IconButtonDefaults.iconToggleButtonVibrantColors()
                 ) {
                     Icon(Icons.Filled.Shuffle, contentDescription = "随机播放")
                 }
-                IconButton(onClick = onPrev) {
+                IconButton(
+                    onClick = onPrev,
+                    shapes = IconButtonDefaults.shapes(
+                        pressedShape = RoundedCornerShape(14.dp)
+                    )
+                ) {
                     Icon(
                         Icons.Filled.SkipPrevious,
                         contentDescription = "上一曲",
@@ -410,7 +411,12 @@ fun PlayerScreen(
                     isPlaying = isPlaying,
                     onClick = onTogglePlay
                 )
-                IconButton(onClick = onNext) {
+                IconButton(
+                    onClick = onNext,
+                    shapes = IconButtonDefaults.shapes(
+                        pressedShape = RoundedCornerShape(14.dp)
+                    )
+                ) {
                     Icon(
                         Icons.Filled.SkipNext,
                         contentDescription = "下一曲",
@@ -419,7 +425,11 @@ fun PlayerScreen(
                 }
                 IconToggleButton(
                     checked = repeatMode != Player.REPEAT_MODE_OFF,
-                    onCheckedChange = { onToggleRepeat() }
+                    onCheckedChange = { onToggleRepeat() },
+                    shapes = IconButtonDefaults.toggleableShapes(
+                        checkedShape = RoundedCornerShape(14.dp)
+                    ),
+                    colors = IconButtonDefaults.iconToggleButtonVibrantColors()
                 ) {
                     Icon(
                         imageVector = when (repeatMode) {

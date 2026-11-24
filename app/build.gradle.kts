@@ -18,9 +18,9 @@ android {
     defaultConfig {
         applicationId = "com.melody.player"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 42
-        versionName = "2.3.0"
+        targetSdk = 37
+        versionCode = 50
+        versionName = "3.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }

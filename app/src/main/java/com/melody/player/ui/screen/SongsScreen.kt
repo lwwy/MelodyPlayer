@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.melody.player.ui.screen
 
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -7,7 +9,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,10 +63,13 @@ fun SongsScreen(
             songs.isEmpty() -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(stringResource(R.string.empty_library), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            stringResource(R.string.empty_library),
+                            style = MaterialTheme.typography.titleLargeEmphasized
+                        )
                         Text(
                             stringResource(R.string.empty_library_hint),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -89,6 +95,12 @@ fun SongsScreen(
     }
 }
 
+/**
+ * Material 3 Expressive 歌曲行：官方 [ListItem] 组件，
+ * 封面为 leadingContent、标题 headlineContent、歌手·专辑 supportingContent，
+ * 正在播放时 trailingContent 显示动态均衡器。
+ * 当前播放行用 primaryContainer 容器色 + onPrimaryContainer 文字，选中态语义清晰。
+ */
 @Composable
 private fun SongRow(
     song: Song,
@@ -96,55 +108,58 @@ private fun SongRow(
     isPlaying: Boolean,
     onClick: () -> Unit
 ) {
-    val bg = if (isCurrent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .background(bg)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AlbumArt(
-            uri = song.albumArtUri,
-            contentDescription = "专辑封面",
-            modifier = Modifier.size(56.dp),
-            shape = RoundedCornerShape(10.dp)
+    val colors = if (isCurrent) {
+        ListItemDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            supportingContentColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
         )
-        Spacer(Modifier.width(14.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                song.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = if (isCurrent) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-            )
+    } else {
+        ListItemDefaults.colors()
+    }
+    ListItem(
+        onClick = onClick,
+        supportingContent = {
             Text(
                 "${song.artist} · ${song.album}",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isCurrent) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-        }
-        // 仅当前正在播放时显示动态均衡器；其余行右侧留空（时长已取消）
-        if (isCurrent && isPlaying) {
-            Spacer(Modifier.width(8.dp))
-            AnimatedEqualizer(modifier = Modifier.size(24.dp))
-        }
+        },
+        leadingContent = {
+            AlbumArt(
+                uri = song.albumArtUri,
+                contentDescription = "专辑封面",
+                modifier = Modifier.size(56.dp),
+                shape = RoundedCornerShape(12.dp)
+            )
+        },
+        trailingContent = if (isCurrent && isPlaying) {
+            { AnimatedEqualizer(modifier = Modifier.size(24.dp)) }
+        } else null,
+        colors = colors,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Text(
+            song.title,
+            style = MaterialTheme.typography.titleMediumEmphasized,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
 /**
- * 正在播放的动态均衡器：4 根竖条以不同周期错峰跳动，营造播放律动感。
- * 仅在「当前歌曲且正在播放」时渲染，暂停/非当前歌曲不显示动画。
+ * 正在播放的动态均衡器：4 根竖条以不同周期错峰跳动。
+ * 缓动用官方标准曲线，营造播放律动感。
  */
 @Composable
 private fun AnimatedEqualizer(modifier: Modifier = Modifier) {
     val color = MaterialTheme.colorScheme.primary
     val transition = rememberInfiniteTransition(label = "equalizer")
-    // 4 根柱子错峰跳动；缓动用 Compose 官方 FastOutSlowInEasing（M3 Standard 曲线）
     fun standard(duration: Int): androidx.compose.animation.core.InfiniteRepeatableSpec<Float> =
         infiniteRepeatable(
             tween<Float>(durationMillis = duration, easing = FastOutSlowInEasing),

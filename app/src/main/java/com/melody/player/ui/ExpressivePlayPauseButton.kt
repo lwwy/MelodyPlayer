@@ -1,6 +1,10 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.melody.player.ui
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -13,11 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 /**
- * Material 3 官方播放/暂停按钮。
+ * Material 3 Expressive 播放/暂停按钮。
  *
- * 直接使用官方 [FilledIconButton]（圆形实心容器 + 居中图标），
- * 组件自带官方 state layer 按压反馈，图标与背景严格同心。
- * 图标切换采用 B 方案：直接切换，点击瞬间换图标，零过渡动画。
+ * 用官方 [FilledIconButton] 的 expressive shapes 重载：静止时圆形，
+ * 按下时形变为圆角方形（shape morph）——这是 M3 Expressive 的标志性交互反馈。
+ * 图标直接切换（点击瞬间换），避免过渡期的视觉错位。
  */
 @Composable
 fun ExpressivePlayPauseButton(
@@ -27,6 +31,10 @@ fun ExpressivePlayPauseButton(
 ) {
     FilledIconButton(
         onClick = onClick,
+        shapes = IconButtonDefaults.shapes(
+            shape = CircleShape,
+            pressedShape = RoundedCornerShape(20.dp)
+        ),
         modifier = modifier.size(64.dp),
         colors = IconButtonDefaults.filledIconButtonColors(
             containerColor = MaterialTheme.colorScheme.primary,

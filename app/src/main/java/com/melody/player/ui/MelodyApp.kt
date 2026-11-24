@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.MotionScheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -40,6 +42,8 @@ fun MelodyApp(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showPlayer by remember { mutableStateOf(false) }
+    // Material 3 Expressive 动效 token：跟随主题的运动方案，spatial 用于位移（带弹性回弹）
+    val motionScheme = MaterialTheme.motionScheme
 
     LaunchedEffect(permissionGranted) {
         if (permissionGranted) viewModel.loadLibrary()
@@ -95,8 +99,14 @@ fun MelodyApp(
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
                 .padding(bottom = 18.dp),
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = motionScheme.defaultSpatialSpec<IntOffset>()
+            ) + fadeIn(animationSpec = motionScheme.defaultEffectsSpec()),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = motionScheme.fastSpatialSpec<IntOffset>()
+            ) + fadeOut(animationSpec = motionScheme.fastEffectsSpec())
         ) {
             uiState.currentSong?.let { song ->
                 MiniPlayer(
@@ -109,11 +119,17 @@ fun MelodyApp(
             }
         }
 
-        // 全屏播放页：从底部弹出 / 收回（M3 容器过渡 + Emphasized 曲线）
+        // 全屏播放页：从底部弹出 / 收回，使用 M3 Expressive spatial spring 动效（弹性回弹）
         AnimatedVisibility(
             visible = showPlayer && uiState.currentSong != null,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = motionScheme.defaultSpatialSpec<IntOffset>()
+            ) + fadeIn(animationSpec = motionScheme.defaultEffectsSpec()),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = motionScheme.fastSpatialSpec<IntOffset>()
+            ) + fadeOut(animationSpec = motionScheme.fastEffectsSpec())
         ) {
             uiState.currentSong?.let { song ->
                 PlayerScreen(
