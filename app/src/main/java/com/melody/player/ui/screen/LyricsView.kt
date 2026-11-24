@@ -50,8 +50,8 @@ fun LyricsView(
 
     val edgeSpace = if (compact) 40.dp else 120.dp
     val scrollOffset = if (compact) 0 else 0
-    val currentFont = if (compact) 18.sp else 20.sp
-    val otherFont = if (compact) 15.sp else 17.sp
+    val currentFont = if (compact) 22.sp else 26.sp
+    val otherFont = if (compact) 16.sp else 18.sp
     val verticalPad = if (compact) 6.dp else 10.dp
 
     // 当前行：最后一个 timeMs <= progressMs 的行

@@ -17,11 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 /**
- * Material 3 Expressive 播放/暂停按钮。
- *
- * 用官方 [FilledIconButton] 的 expressive shapes 重载：静止时圆形，
- * 按下时形变为圆角方形（shape morph）——这是 M3 Expressive 的标志性交互反馈。
- * 图标直接切换（点击瞬间换），避免过渡期的视觉错位。
+ * Material 3 Expressive 播放/暂停按钮：84dp 主按钮，
+ * 静止时 expressive 圆角方形，按下时形变为圆形（shape morph）——M3 Expressive 标志性反馈。
  */
 @Composable
 fun ExpressivePlayPauseButton(
@@ -32,10 +29,10 @@ fun ExpressivePlayPauseButton(
     FilledIconButton(
         onClick = onClick,
         shapes = IconButtonDefaults.shapes(
-            shape = CircleShape,
-            pressedShape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(28.dp),
+            pressedShape = CircleShape
         ),
-        modifier = modifier.size(64.dp),
+        modifier = modifier.size(84.dp),
         colors = IconButtonDefaults.filledIconButtonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -44,7 +41,7 @@ fun ExpressivePlayPauseButton(
         Icon(
             imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
             contentDescription = if (isPlaying) "暂停" else "播放",
-            modifier = Modifier.size(32.dp)
+            modifier = Modifier.size(36.dp)
         )
     }
 }

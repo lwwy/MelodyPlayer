@@ -3,7 +3,6 @@
 package com.melody.player.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,8 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -28,12 +27,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.melody.player.model.Song
 
+/**
+ * Material 3 Expressive docked 迷你播放器：
+ * 大圆角 primaryContainer 悬浮卡片，封面放大到 56dp，标题 emphasized，
+ * 播放键带容器底色并在按下时形变，点击卡片展开全屏播放页。
+ */
 @Composable
 fun MiniPlayer(
     song: Song,
@@ -42,36 +44,31 @@ fun MiniPlayer(
     onTogglePlay: () -> Unit,
     onExpand: () -> Unit
 ) {
-    // Material 3 Expressive 悬浮卡片：largeIncreased 大圆角表达性形状，
-    // 实色 primaryContainer 背景（与列表「正在播放」行同款，随壁纸动态变色），
-    // 文字/图标用 onPrimaryContainer 系列自动适配明暗；点击展开全屏播放页。
-    val shape = MaterialTheme.shapes.largeIncreased
+    val shape = RoundedCornerShape(28.dp)
     val container = MaterialTheme.colorScheme.primaryContainer
     val onContainer = MaterialTheme.colorScheme.onPrimaryContainer
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-            .shadow(4.dp, shape, spotColor = Color.Black.copy(alpha = 0.14f))
+            .padding(horizontal = 12.dp)
             .clip(shape)
             .background(container)
-            .border(1.dp, Color.White.copy(alpha = 0.16f), shape)
             .clickable { onExpand() }
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AlbumArt(
             uri = song.albumArtUri,
             contentDescription = "专辑封面",
-            modifier = Modifier.size(42.dp),
-            shape = RoundedCornerShape(10.dp)
+            modifier = Modifier.size(56.dp),
+            shape = RoundedCornerShape(18.dp)
         )
-        Spacer(Modifier.width(10.dp))
-        // 进度条位于封面与右侧播放键之间的文字区，作为第三行
+        Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 song.title,
-                style = MaterialTheme.typography.titleMediumEmphasized,
+                style = MaterialTheme.typography.titleLargeEmphasized,
                 color = onContainer,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -79,34 +76,36 @@ fun MiniPlayer(
             Text(
                 song.artist,
                 style = MaterialTheme.typography.bodyMedium,
-                color = onContainer.copy(alpha = 0.78f),
+                color = onContainer.copy(alpha = 0.8f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
             LinearProgressIndicator(
                 progress = { progress.coerceIn(0f, 1f) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(2.5.dp)
+                    .height(3.dp)
                     .clip(RoundedCornerShape(2.dp)),
                 color = onContainer,
-                trackColor = onContainer.copy(alpha = 0.18f),
+                trackColor = onContainer.copy(alpha = 0.2f),
                 gapSize = 0.dp,
                 drawStopIndicator = {}
             )
         }
-        IconButton(
+        Spacer(Modifier.width(8.dp))
+        FilledIconButton(
             onClick = onTogglePlay,
+            modifier = Modifier.size(48.dp),
             shapes = IconButtonDefaults.shapes(
-                shape = CircleShape,
-                pressedShape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp),
+                pressedShape = CircleShape
             )
         ) {
             Icon(
                 imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                 contentDescription = if (isPlaying) "暂停" else "播放",
-                tint = onContainer
+                modifier = Modifier.size(26.dp)
             )
         }
     }

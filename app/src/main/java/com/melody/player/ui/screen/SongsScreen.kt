@@ -30,7 +30,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,8 +51,7 @@ fun SongsScreen(
     bottomContentPadding: Dp = 0.dp,
     onSongClick: (Song) -> Unit
 ) {
-    Column(modifier = modifier.fillMaxSize().statusBarsPadding()) {
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxSize()) {
         when {
             isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -78,8 +76,31 @@ fun SongsScreen(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = bottomContentPadding)
+                    contentPadding = PaddingValues(
+                        top = 0.dp,
+                        bottom = bottomContentPadding
+                    )
                 ) {
+                    // 大号 Expressive 标题，随内容一起滚动
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .statusBarsPadding()
+                                .padding(horizontal = 24.dp, vertical = 20.dp)
+                        ) {
+                            Text(
+                                "Music",
+                                style = MaterialTheme.typography.displayMediumEmphasized,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                "本地曲库",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                     items(songs, key = { it.id }) { song ->
                         SongRow(
                             song = song,
@@ -91,15 +112,12 @@ fun SongsScreen(
                 }
             }
         }
-        }
     }
 }
 
 /**
- * Material 3 Expressive 歌曲行：官方 [ListItem] 组件，
- * 封面为 leadingContent、标题 headlineContent、歌手·专辑 supportingContent，
- * 正在播放时 trailingContent 显示动态均衡器。
- * 当前播放行用 primaryContainer 容器色 + onPrimaryContainer 文字，选中态语义清晰。
+ * Expressive 歌曲行：封面放大到 64dp + 20dp 大圆角，标题 emphasized，
+ * 时长显示在 trailing；当前播放行用 primaryContainer 卡片 + 左侧指示条 + 均衡器。
  */
 @Composable
 private fun SongRow(
@@ -112,7 +130,8 @@ private fun SongRow(
         ListItemDefaults.colors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            supportingContentColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            supportingContentColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+            trailingContentColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
         )
     } else {
         ListItemDefaults.colors()
@@ -131,34 +150,41 @@ private fun SongRow(
             AlbumArt(
                 uri = song.albumArtUri,
                 contentDescription = "专辑封面",
-                modifier = Modifier.size(56.dp),
-                shape = RoundedCornerShape(12.dp)
+                modifier = Modifier.size(64.dp),
+                shape = RoundedCornerShape(20.dp)
             )
         },
-        trailingContent = if (isCurrent && isPlaying) {
-            { AnimatedEqualizer(modifier = Modifier.size(24.dp)) }
-        } else null,
+        trailingContent = {
+            if (isCurrent && isPlaying) {
+                AnimatedEqualizer(modifier = Modifier.size(24.dp))
+            } else {
+                Text(
+                    song.durationText,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (isCurrent) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
         colors = colors,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(24.dp))
     ) {
         Text(
             song.title,
-            style = MaterialTheme.typography.titleMediumEmphasized,
+            style = MaterialTheme.typography.titleLargeEmphasized,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
     }
 }
 
-/**
- * 正在播放的动态均衡器：4 根竖条以不同周期错峰跳动。
- * 缓动用官方标准曲线，营造播放律动感。
- */
+/** 正在播放的动态均衡器：4 根竖条以不同周期错峰跳动。 */
 @Composable
 private fun AnimatedEqualizer(modifier: Modifier = Modifier) {
-    val color = MaterialTheme.colorScheme.primary
+    val color = MaterialTheme.colorScheme.onPrimaryContainer
     val transition = rememberInfiniteTransition(label = "equalizer")
     fun standard(duration: Int): androidx.compose.animation.core.InfiniteRepeatableSpec<Float> =
         infiniteRepeatable(

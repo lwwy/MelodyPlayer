@@ -86,7 +86,7 @@ fun MelodyApp(
                 isLoading = uiState.isLoading,
                 currentSongId = uiState.currentSong?.id,
                 isPlaying = uiState.isPlaying,
-                bottomContentPadding = 92.dp,
+                bottomContentPadding = 108.dp,
                 onSongClick = { viewModel.playSong(it) }
             )
         }

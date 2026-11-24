@@ -12,14 +12,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -27,11 +25,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -41,10 +37,11 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -56,13 +53,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -77,46 +70,34 @@ private fun formatTime(ms: Long): String {
     return "%d:%02d".format(total / 60, total % 60)
 }
 
-/** 歌词快照：把歌词与所属歌曲绑定，供 AnimatedContent 稳定持有新旧两份内容做整块溶解。 */
 private data class LyricsSnapshot(val songId: Long, val lines: List<LyricLine>)
 
 /**
- * 封面切歌动画：交叉溶解 + 同向推进缩放（Apple Music 风格）。
- * 新封面从略大(0.96)淡入到 1，旧封面从 1 放大到 1.04 淡出——两者同向放大，
- * 观感像同一张图推进，而非两张图错位。
- *
- * 光晕根因：旧封面 scaleOut(1.04) 叠加基础放大 = 1.12，始终比新封面（1.037→1.08）大；
- * 淡出末段旧图仍半透明，其放大后的边缘露在新封面之外，形成"四周光晕散开"。
- * 修复双保险：① 旧封面不再放大（scaleOut 目标 1.0，尺寸恒为 1.08）——根治露边；
- * ② 旧封面淡出加速到 150ms，来不及显形即消失。
- * 新封面的 scaleIn(0.96→1) 推进感、350ms 速率全部保持原样，观感不变。
+ * 封面切换： expressive 形变——新封面轻微放大淡入，旧封面同步淡出。
+ * 无阴影、无 1.08 冗余放大等历史 workaround，全部推倒重来。
  */
 private fun AnimatedContentTransitionScope<Song>.coverSwitchSpec(): ContentTransform {
-    val scale = tween<Float>(durationMillis = 350, easing = FastOutSlowInEasing)
-    return (fadeIn(animationSpec = scale) + scaleIn(initialScale = 0.96f, animationSpec = scale)) togetherWith
-        (fadeOut(animationSpec = tween<Float>(durationMillis = 150, easing = FastOutSlowInEasing)) +
-            scaleOut(targetScale = 1.0f, animationSpec = scale))
+    val spec = tween<Float>(durationMillis = 340, easing = FastOutSlowInEasing)
+    return (fadeIn(animationSpec = spec) + scaleIn(initialScale = 0.94f, animationSpec = spec)) togetherWith
+        (fadeOut(animationSpec = spec) + scaleOut(targetScale = 1.04f, animationSpec = spec))
 }
 
-/**
- * 歌曲信息切歌动画：淡入淡出 + 轻微垂直位移（新文字从下方 12dp 浮现、旧文字上移退出）。
- */
+/** 歌曲信息切换：淡入淡出 + 轻微缩放。 */
 private fun AnimatedContentTransitionScope<Song>.infoSwitchSpec(): ContentTransform {
-    val fade = tween<Float>(durationMillis = 300, easing = FastOutSlowInEasing)
-    return (fadeIn(animationSpec = fade) + slideInVertically(initialOffsetY = { 12 })) togetherWith
-        (fadeOut(animationSpec = fade) + slideOutVertically(targetOffsetY = { -12 }))
+    val spec = tween<Float>(durationMillis = 300, easing = FastOutSlowInEasing)
+    return (fadeIn(animationSpec = spec) + scaleIn(initialScale = 0.96f, animationSpec = spec)) togetherWith
+        fadeOut(animationSpec = spec)
 }
 
-/** 歌词整块溶解：切歌时旧歌词淡出、新歌词淡入，配合内部进度滚动。 */
+/** 歌词整块溶解。 */
 private fun AnimatedContentTransitionScope<LyricsSnapshot>.lyricsSwitchSpec(): ContentTransform {
     val spec = tween<Float>(durationMillis = 280, easing = FastOutSlowInEasing)
     return fadeIn(animationSpec = spec) togetherWith fadeOut(animationSpec = spec)
 }
 
 /**
- * Material 3 Expressive 波形进度条：官方 [LinearWavyProgressIndicator]，
- * 播放时带轻微波浪律动，暂停时平直。保留点击定位与拖动 seek 交互
- * （暂停时同样可拖动，松手后由 ViewModel 的 seekTo 更新进度并续播）。
+ * Expressive 波形进度条：播放时带波浪律动，暂停时平直；
+ * 点击定位与拖动 seek 均保留（暂停时也可拖动，松手后 seekTo 更新并续播）。
  */
 @Composable
 private fun SlimSeekBar(
@@ -129,7 +110,7 @@ private fun SlimSeekBar(
     val colorScheme = MaterialTheme.colorScheme
     Box(
         modifier = modifier
-            .height(28.dp)
+            .height(30.dp)
             .fillMaxWidth()
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
@@ -159,7 +140,6 @@ private fun SlimSeekBar(
             modifier = Modifier.fillMaxWidth(),
             color = colorScheme.primary,
             trackColor = colorScheme.surfaceVariant,
-            // 播放时给 0.6 波浪幅度制造律动；暂停时 0，回归平直轨道
             amplitude = { if (isPlaying) 0.6f else 0f }
         )
     }
@@ -198,80 +178,75 @@ fun PlayerScreen(
         colors = listOf(animatedTopColor, colorScheme.surface)
     )
 
-    // 歌词快照：仅当歌词数据真正变化时才换对象，保证切歌过渡期新旧两层内容各自稳定
     val lyricsSnapshot = remember(lyricsSongId, lyrics) { LyricsSnapshot(lyricsSongId, lyrics) }
 
-    // 拖动时展示本地值，松手才真正 seek
     var scrubFraction by remember { mutableFloatStateOf(-1f) }
     val effectiveDuration = durationMs.coerceAtLeast(1L)
     val progressFraction = (progressMs.toFloat() / effectiveDuration).coerceIn(0f, 1f)
     val displayFraction = if (scrubFraction >= 0f) scrubFraction else progressFraction
 
-    androidx.compose.foundation.layout.Box(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(backdrop)
     ) {
-        androidx.compose.foundation.layout.Column(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 36.dp),
+                .padding(bottom = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 顶部：收起按钮 + 标题（返回也可直接用系统返回键）
+            // 顶部：收起按钮 + 大号"正在播放"标题（expressive emphasized）
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
+                FilledTonalIconButton(
                     onClick = onDismiss,
                     shapes = IconButtonDefaults.shapes(
+                        shape = RoundedCornerShape(16.dp),
                         pressedShape = CircleShape
-                    )
+                    ),
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         Icons.Filled.KeyboardArrowDown,
                         contentDescription = "收起播放页",
-                        modifier = Modifier.size(30.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
-                androidx.compose.foundation.layout.Column(
+                Column(
                     modifier = Modifier.weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         "正在播放",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.titleLargeEmphasized,
+                        color = colorScheme.onSurface
                     )
                 }
                 Spacer(Modifier.size(48.dp))
             }
 
-            // 封面：阴影放在固定外层容器，不参与切歌动画（避免过渡期两份阴影叠加 +
-            // 缩放拉伸导致四周闪光晕）；AnimatedContent 只在阴影框内切换图片本身。
-            // targetState 传整个 Song，内容 lambda 用 it —— 保证新旧两层是不同的封面。
-            androidx.compose.foundation.layout.Box(
+            // 封面：大圆角 32dp，无阴影，外层容器统一裁剪
+            Box(
                 modifier = Modifier
                     .weight(1f, fill = true)
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                androidx.compose.foundation.layout.Box(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
-                        // 阴影从 14dp 减到 6dp 并压低 spotColor：此前 14dp 的扩散阴影
-                        // 在封面底部尤其明显，看起来像一圈散开的光晕。
-                        .shadow(6.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha = 0.20f))
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                        .clip(RoundedCornerShape(32.dp))
+                        .background(colorScheme.surfaceContainerHigh),
                     contentAlignment = Alignment.Center
                 ) {
                     AnimatedContent(
@@ -282,69 +257,68 @@ fun PlayerScreen(
                         AlbumArt(
                             uri = targetSong.albumArtUri,
                             contentDescription = "专辑封面",
-                            // 基础放大 1.08：叠加 scaleIn(0.96) 后实际仍 ≥1，图片始终盖满容器，
-                            // 不会在缩放动画中露出兜底色；多出的边缘由外层容器统一裁剪。
-                            modifier = Modifier.fillMaxSize().scale(1.08f),
-                            // 内层不裁圆角：避免 1.08 放大后内圆角(~26dp)与外层裁剪(24dp)不匹配，
-                            // 在四角露出兜底色形成"光晕"。最终圆角完全由外层容器 clip 决定。
+                            modifier = Modifier.fillMaxSize(),
                             shape = RoundedCornerShape(0.dp)
                         )
                     }
                 }
             }
 
-            // 歌曲信息：淡入淡出 + 轻微垂直位移，与封面同步
+            // 歌曲信息：超大 emphasized 标题 + 歌手 + 专辑 chip
             AnimatedContent(
                 targetState = song,
                 transitionSpec = { infoSwitchSpec() },
                 label = "song-info-switch"
             ) { infoSong ->
-                androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         infoSong.title,
-                        style = MaterialTheme.typography.headlineSmallEmphasized,
+                        style = MaterialTheme.typography.headlineMediumEmphasized,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(
                         infoSong.artist,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
                         color = colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Text(
-                        infoSong.album,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                    Spacer(Modifier.height(6.dp))
+                    AssistChip(
+                        onClick = {},
+                        label = {
+                            Text(
+                                infoSong.album,
+                                style = MaterialTheme.typography.labelLargeEmphasized,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     )
                 }
             }
 
-            // 歌词：整块溶解（歌词与所属歌绑定成快照，新旧两层内容真正不同）
+            // 歌词：整块溶解，当前行高亮放大
             AnimatedContent(
                 targetState = lyricsSnapshot,
                 transitionSpec = { lyricsSwitchSpec() },
                 label = "lyrics-switch"
             ) { snap ->
-                androidx.compose.foundation.layout.Column(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Spacer(Modifier.height(4.dp))
-                    androidx.compose.foundation.layout.Box(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(112.dp)
+                            .height(96.dp)
                     ) {
                         LyricsView(
                             lyrics = snap.lines,
@@ -358,9 +332,9 @@ fun PlayerScreen(
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
 
-            // 精简进度条：暂停时也可拖动，松手后由 seekTo 更新进度并续播
+            // 进度条 + 时间
             SlimSeekBar(
                 fraction = displayFraction,
                 isPlaying = isPlaying,
@@ -372,64 +346,68 @@ fun PlayerScreen(
                 modifier = Modifier.fillMaxWidth()
             )
             Row(modifier = Modifier.fillMaxWidth()) {
-                Text(formatTime(progressMs), style = MaterialTheme.typography.labelSmall)
+                Text(formatTime(progressMs), style = MaterialTheme.typography.labelMediumEmphasized)
                 Spacer(Modifier.weight(1f))
-                Text(formatTime(durationMs), style = MaterialTheme.typography.labelSmall)
+                Text(formatTime(durationMs), style = MaterialTheme.typography.labelMediumEmphasized)
             }
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
 
-            // 播放控制区：官方组件
+            // 控制区：功能键带容器底色，播放键 84dp expressive 形变
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
             ) {
-                IconToggleButton(
+                FilledTonalIconToggleButton(
                     checked = shuffle,
                     onCheckedChange = { onToggleShuffle() },
+                    modifier = Modifier.size(48.dp),
                     shapes = IconButtonDefaults.toggleableShapes(
-                        checkedShape = RoundedCornerShape(14.dp)
-                    ),
-                    colors = IconButtonDefaults.iconToggleButtonVibrantColors()
+                        checkedShape = RoundedCornerShape(16.dp)
+                    )
                 ) {
                     Icon(Icons.Filled.Shuffle, contentDescription = "随机播放")
                 }
-                IconButton(
+                FilledTonalIconButton(
                     onClick = onPrev,
+                    modifier = Modifier.size(54.dp),
                     shapes = IconButtonDefaults.shapes(
-                        pressedShape = RoundedCornerShape(14.dp)
+                        shape = RoundedCornerShape(20.dp),
+                        pressedShape = CircleShape
                     )
                 ) {
                     Icon(
                         Icons.Filled.SkipPrevious,
                         contentDescription = "上一曲",
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(36.dp)
                     )
                 }
                 ExpressivePlayPauseButton(
                     isPlaying = isPlaying,
                     onClick = onTogglePlay
                 )
-                IconButton(
+                FilledTonalIconButton(
                     onClick = onNext,
+                    modifier = Modifier.size(54.dp),
                     shapes = IconButtonDefaults.shapes(
-                        pressedShape = RoundedCornerShape(14.dp)
+                        shape = RoundedCornerShape(20.dp),
+                        pressedShape = CircleShape
                     )
                 ) {
                     Icon(
                         Icons.Filled.SkipNext,
                         contentDescription = "下一曲",
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(36.dp)
                     )
                 }
-                IconToggleButton(
+                FilledTonalIconToggleButton(
                     checked = repeatMode != Player.REPEAT_MODE_OFF,
                     onCheckedChange = { onToggleRepeat() },
+                    modifier = Modifier.size(48.dp),
                     shapes = IconButtonDefaults.toggleableShapes(
-                        checkedShape = RoundedCornerShape(14.dp)
-                    ),
-                    colors = IconButtonDefaults.iconToggleButtonVibrantColors()
+                        checkedShape = RoundedCornerShape(16.dp)
+                    )
                 ) {
                     Icon(
                         imageVector = when (repeatMode) {
@@ -441,7 +419,7 @@ fun PlayerScreen(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
         }
     }
 }
