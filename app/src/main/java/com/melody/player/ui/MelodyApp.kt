@@ -47,14 +47,14 @@ fun MelodyApp(
     var showPlayer by remember { mutableStateOf(false) }
     // Material 3 Expressive 动效 token：跟随主题的运动方案，spatial 用于位移（带弹性回弹）
     val motionScheme = MaterialTheme.motionScheme
-    // 全屏播放页进出场：expressive 弹簧——低刚度 + 中等回弹，展开有轻微"弹出"手感，
-    // 收起利落不拖沓。位移与缩放共用同一条 spring，节奏一致。
+    // 全屏播放页进场：临界阻尼弹簧——无回弹、无过冲，平滑到位。
+    // 位移与缩放共用同一条 spring，节奏一致。
     val playerSpring = spring<Float>(
-        dampingRatio = Spring.DampingRatioMediumBouncy,
+        dampingRatio = Spring.DampingRatioNoBouncy,
         stiffness = Spring.StiffnessMediumLow
     )
     val playerOffsetSpring = spring<IntOffset>(
-        dampingRatio = Spring.DampingRatioMediumBouncy,
+        dampingRatio = Spring.DampingRatioNoBouncy,
         stiffness = Spring.StiffnessMediumLow
     )
 
@@ -130,8 +130,8 @@ fun MelodyApp(
             }
         }
 
-        // 全屏播放页：从底部"弹出/收回"——位移 + 轻微缩放回弹，M3 Expressive 手感。
-        // 展开时从 92% 放大到满屏并带弹性过冲；收起时缩回并快速滑出，不拖沓。
+        // 全屏播放页：从底部滑入/收回——位移 + 轻微缩放，临界阻尼无回弹。
+        // 展开时从 92% 平滑放大到满屏；收起时缩回并快速滑出，不拖沓。
         AnimatedVisibility(
             visible = showPlayer && uiState.currentSong != null,
             enter = slideInVertically(
