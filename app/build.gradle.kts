@@ -19,8 +19,8 @@ android {
         applicationId = "com.melody.player"
         minSdk = 26
         targetSdk = 37
-        versionCode = 55
-        versionName = "3.1.4"
+        versionCode = 56
+        versionName = "3.1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
