@@ -139,7 +139,7 @@ private fun SlimSeekBar(
             modifier = Modifier.fillMaxWidth(),
             color = colorScheme.primary,
             trackColor = colorScheme.surfaceVariant,
-            amplitude = { if (isPlaying) 0.3f else 0f }
+            amplitude = { if (isPlaying) 0.6f else 0f }
         )
     }
 }
