@@ -37,7 +37,6 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.Icon
@@ -140,7 +139,7 @@ private fun SlimSeekBar(
             modifier = Modifier.fillMaxWidth(),
             color = colorScheme.primary,
             trackColor = colorScheme.surfaceVariant,
-            amplitude = { if (isPlaying) 0.6f else 0f }
+            amplitude = { if (isPlaying) 0.3f else 0f }
         )
     }
 }
@@ -264,7 +263,7 @@ fun PlayerScreen(
                 }
             }
 
-            // 歌曲信息：超大 emphasized 标题 + 歌手 + 专辑 chip
+            // 歌曲信息：标题 + 歌手两行，去掉专辑名，留白更舒展
             AnimatedContent(
                 targetState = song,
                 transitionSpec = { infoSwitchSpec() },
@@ -273,13 +272,13 @@ fun PlayerScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         infoSong.title,
-                        style = MaterialTheme.typography.headlineMediumEmphasized,
+                        style = MaterialTheme.typography.headlineLargeEmphasized,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(10.dp))
                     Text(
                         infoSong.artist,
                         style = MaterialTheme.typography.titleMediumEmphasized,
@@ -288,18 +287,6 @@ fun PlayerScreen(
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                infoSong.album,
-                                style = MaterialTheme.typography.labelLargeEmphasized,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
                     )
                 }
             }
@@ -314,11 +301,11 @@ fun PlayerScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(16.dp))
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(96.dp)
+                            .height(112.dp)
                     ) {
                         LyricsView(
                             lyrics = snap.lines,

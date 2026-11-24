@@ -21,7 +21,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -84,16 +88,45 @@ fun LyricsView(
         return
     }
 
+    // 上下淡出遮罩（fade edge）：用 DstIn 把列表顶部/底部边缘的像素 alpha 渐变到 0，
+    // 使被容器裁切的歌词行平滑隐去而不是硬切一半。与背景色无关，动态取色下同样自然。
+    val fadeMask = Modifier.drawWithContent {
+        drawContent()
+        val fadePx = if (compact) 28f else 48f
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color.Transparent,
+                    Color.Black
+                ),
+                startY = 0f,
+                endY = fadePx
+            ),
+            blendMode = BlendMode.DstIn
+        )
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color.Black,
+                    Color.Transparent
+                ),
+                startY = size.height - fadePx,
+                endY = size.height
+            ),
+            blendMode = BlendMode.DstIn
+        )
+    }
+
     LazyColumn(
         state = listState,
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().then(fadeMask),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item { Spacer(Modifier.height(edgeSpace)) }
         itemsIndexed(lyrics) { index, line ->
             val isCurrent = index == currentIndex
             val alpha by animateFloatAsState(
-                targetValue = if (isCurrent) 1f else 0.4f,
+                targetValue = if (isCurrent) 1f else 0.6f,
                 label = "lyric-alpha"
             )
             val scale by animateFloatAsState(
