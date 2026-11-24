@@ -87,17 +87,13 @@ fun SongsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .statusBarsPadding()
-                                .padding(horizontal = 24.dp, vertical = 20.dp)
+                                // 与列表行封面左边缘对齐：行 12dp 外边距 + ListItem 16dp 内边距 = 28dp
+                                .padding(horizontal = 28.dp, vertical = 20.dp)
                         ) {
                             Text(
                                 "Music",
                                 style = MaterialTheme.typography.displayMediumEmphasized,
                                 color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                "本地曲库",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -156,7 +152,12 @@ private fun SongRow(
         },
         trailingContent = {
             if (isCurrent && isPlaying) {
-                AnimatedEqualizer(modifier = Modifier.size(24.dp))
+                Box(
+                    modifier = Modifier.size(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AnimatedEqualizer(modifier = Modifier.height(20.dp))
+                }
             } else {
                 Text(
                     song.durationText,
@@ -199,7 +200,7 @@ private fun AnimatedEqualizer(modifier: Modifier = Modifier) {
     )
     Row(
         modifier = modifier,
-        verticalAlignment = Alignment.Bottom,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(2.dp)
     ) {
         heights.forEach { height ->
