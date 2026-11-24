@@ -2,7 +2,6 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
@@ -14,7 +13,7 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.melody.player"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.melody.player"
@@ -63,9 +62,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    // AGP 9 内置 Kotlin：jvmTarget 跟随 compileOptions（Java 17），无需 kotlinOptions
 
     buildFeatures {
         compose = true
@@ -87,7 +84,7 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2025.12.00")
+    val composeBom = platform("androidx.compose:compose-bom:2026.11.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
