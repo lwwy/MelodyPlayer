@@ -31,7 +31,13 @@ import com.melody.player.ui.screen.SongsScreen
 import kotlinx.coroutines.delay
 
 @Composable
-fun MelodyApp(permissionGranted: Boolean, viewModel: PlayerViewModel = viewModel()) {
+fun MelodyApp(
+    permissionGranted: Boolean,
+    permissionPermanentlyDenied: Boolean = false,
+    onRequestPermission: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+    viewModel: PlayerViewModel = viewModel()
+) {
     val uiState by viewModel.uiState.collectAsState()
     var showPlayer by remember { mutableStateOf(false) }
 
@@ -53,7 +59,11 @@ fun MelodyApp(permissionGranted: Boolean, viewModel: PlayerViewModel = viewModel
     }
 
     if (!permissionGranted) {
-        PermissionScreen()
+        PermissionScreen(
+            permanentlyDenied = permissionPermanentlyDenied,
+            onRequest = onRequestPermission,
+            onOpenSettings = onOpenSettings
+        )
         return
     }
 

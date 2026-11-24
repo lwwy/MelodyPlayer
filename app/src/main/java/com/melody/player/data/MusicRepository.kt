@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
-import com.melody.player.model.Album
 import com.melody.player.model.Song
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -44,6 +43,10 @@ class MusicRepository(private val context: Context) {
             val albumIdCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
             val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
 
+            // 封面探测缓存：同一专辑只做一次 openFileDescriptor 存在性校验，
+            // 避免 N+1 重复 I/O（同一专辑可能有多首歌）。null 也缓存，杜绝反复失败探测。
+            val artUriCache = mutableMapOf<Long, String?>()
+
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idCol)
                 val title = cursor.getString(titleCol)?.trim().orEmpty()
@@ -62,7 +65,7 @@ class MusicRepository(private val context: Context) {
                 if (isLikelyRecording(finalTitle, displayName)) continue
 
                 val albumId = cursor.getLong(albumIdCol)
-                val artUri = getAlbumArtUri(albumId)
+                val artUri = artUriCache.getOrPut(albumId) { getAlbumArtUri(albumId) }
                 val mediaUri = Uri.withAppendedPath(
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     id.toString()
@@ -111,17 +114,5 @@ class MusicRepository(private val context: Context) {
             Log.d("MusicRepository", "no album art for albumId=$albumId: ${e.message}")
             null
         }
-    }
-
-    suspend fun queryAlbums(): List<Album> = withContext(Dispatchers.IO) {
-        val songs = querySongs()
-        songs.groupBy { it.album to it.artist }.map { (key, list) ->
-            Album(
-                name = key.first,
-                artist = key.second,
-                albumArtUri = list.firstNotNullOfOrNull { it.albumArtUri },
-                songCount = list.size
-            )
-        }.sortedBy { it.name }
     }
 }

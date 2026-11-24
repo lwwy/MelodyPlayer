@@ -14,13 +14,10 @@
 # ---------- Media3 / ExoPlayer ----------
 # MediaSessionService 由系统依据 manifest 反射实例化，必须保留
 -keep class com.melody.player.playback.PlaybackService { *; }
-# Media3 会话/控制器/媒体通知相关类保留，避免反射或 JNI 访问失败
--keep class androidx.media3.session.** { *; }
+# Media3 / Compose 库自带 consumer rules，无需整包 keep（整包保留会抵消 R8 压缩、增大包体）
 -dontwarn androidx.media3.**
 
 # ---------- Compose ----------
-# Compose 编译器生成的代码依赖运行时注解，保留 runtime 类
--keep class androidx.compose.runtime.** { *; }
 -dontwarn androidx.compose.**
 
 # ---------- 协程 ----------

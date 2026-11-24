@@ -21,13 +21,6 @@ data class Song(
         }
 }
 
-data class Album(
-    val name: String,
-    val artist: String,
-    val albumArtUri: String?,
-    val songCount: Int
-)
-
 /**
  * 一行带时间戳的歌词，timeMs 为该行开始显示的播放进度（毫秒）。
  */

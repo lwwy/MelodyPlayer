@@ -20,8 +20,8 @@ android {
         applicationId = "com.melody.player"
         minSdk = 26
         targetSdk = 35
-        versionCode = 41
-        versionName = "2.2.1"
+        versionCode = 42
+        versionName = "2.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -81,7 +81,8 @@ android {
     lint {
         // 该 detector 在新版 Kotlin Analysis API 下会触发 lint 工具内部崩溃，非代码问题
         disable += "NullSafeMutableLiveData"
-        abortOnError = false
+        // 恢复官方门禁：lint 错误阻断构建，问题必须在提交前解决
+        abortOnError = true
     }
 }
 
@@ -118,9 +119,6 @@ dependencies {
 
     // 从封面提取主色，驱动播放页动态背景（AndroidX Palette，独立稳定库）
     implementation("androidx.palette:palette-ktx:1.0.0")
-
-    // 权限请求
-    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

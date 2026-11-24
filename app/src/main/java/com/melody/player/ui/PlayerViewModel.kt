@@ -24,7 +24,6 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.melody.player.data.LyricsRepository
 import com.melody.player.data.MusicRepository
 import com.melody.player.data.PlayerPrefs
-import com.melody.player.model.Album
 import com.melody.player.model.LyricLine
 import com.melody.player.model.Song
 import com.melody.player.playback.PlaybackService
@@ -37,13 +36,11 @@ import kotlinx.coroutines.withContext
 
 data class PlayerUiState(
     val songs: List<Song> = emptyList(),
-    val albums: List<Album> = emptyList(),
     val isLoading: Boolean = true,
     val currentSong: Song? = null,
     val isPlaying: Boolean = false,
     val progressMs: Long = 0L,
     val durationMs: Long = 0L,
-    val searchQuery: String = "",
     val repeatMode: Int = Player.REPEAT_MODE_OFF,
     val shuffle: Boolean = false,
     val lyrics: List<LyricLine> = emptyList(),
@@ -169,16 +166,8 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun refreshLibrarySilently() {
         viewModelScope.launch {
             val songs = repository.querySongs()
-            val albums = songs.groupBy { it.album to it.artist }.map { (key, list) ->
-                Album(
-                    name = key.first,
-                    artist = key.second,
-                    albumArtUri = list.firstNotNullOfOrNull { it.albumArtUri },
-                    songCount = list.size
-                )
-            }.sortedBy { it.name }
             allSongs = songs
-            _uiState.value = _uiState.value.copy(songs = songs, albums = albums)
+            _uiState.value = _uiState.value.copy(songs = songs)
         }
     }
 
@@ -304,28 +293,14 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun loadLibrary(onReady: (() -> Unit)? = null) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            // 只扫描一次音频库；专辑列表从结果就地派生，避免二次扫描
             val songs = repository.querySongs()
-            val albums = songs.groupBy { it.album to it.artist }.map { (key, list) ->
-                com.melody.player.model.Album(
-                    name = key.first,
-                    artist = key.second,
-                    albumArtUri = list.firstNotNullOfOrNull { it.albumArtUri },
-                    songCount = list.size
-                )
-            }.sortedBy { it.name }
             allSongs = songs
             _uiState.value = _uiState.value.copy(
                 songs = songs,
-                albums = albums,
                 isLoading = false
             )
             onReady?.invoke()
         }
-    }
-
-    fun search(query: String) {
-        _uiState.value = _uiState.value.copy(searchQuery = query)
     }
 
     fun playSong(song: Song) {
@@ -385,8 +360,8 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 durationMs = c.duration.coerceAtLeast(0L),
                 isPlaying = c.isPlaying
             )
-            // 播放中持续记录位置，供冷启动续播
-            _uiState.value.currentSong?.id?.let { prefs.savePosition(it, pos) }
+            // 播放中记录位置供冷启动续播：用节流写入，避免每 500ms 一次磁盘 I/O
+            _uiState.value.currentSong?.id?.let { prefs.savePositionThrottled(it, pos) }
         }
     }
 
@@ -413,6 +388,11 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     override fun onCleared() {
+        // ViewModel 销毁前强制落盘一次当前进度，弥补节流窗口内未写入的位置
+        val currentId = _uiState.value.currentSong?.id
+        if (currentId != null && currentId >= 0) {
+            prefs.savePosition(currentId, _uiState.value.progressMs)
+        }
         mainHandler.removeCallbacks(refreshRunnable)
         try {
             getApplication<Application>().contentResolver.unregisterContentObserver(mediaObserver)

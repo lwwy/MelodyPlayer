@@ -4,8 +4,8 @@
     <string name="permission_title">需要访问音乐文件</string>
     <string name="permission_desc">Music 需要读取你的本地音频文件才能播放音乐，文件不会上传或联网。</string>
     <string name="permission_grant">允许访问</string>
+    <string name="permission_open_settings">前往系统设置</string>
+    <string name="permission_denied_hint">音乐文件访问权限已被永久拒绝，请在系统设置中手动开启后返回</string>
     <string name="empty_library">还没有找到音乐</string>
     <string name="empty_library_hint">把音频文件放到手机上，然后重新进入应用</string>
-    <string name="search_placeholder">搜索歌曲或歌手</string>
-    <string name="settings_version">版本 %1$s (%2$d)</string>
 </resources>
